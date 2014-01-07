@@ -1,0 +1,35 @@
+#!/bin/bash
+
+curl http://en.wikipedia.org/wiki/List_of_countries_by_population | grep 'flagicon' | awk -F 'title="' '{print $2}' | awk -F '\">' '{print $2}' | awk -F '</a>' '{print $1}' > countryNames.txt
+
+curl http://en.wikipedia.org/wiki/List_of_countries_by_population | grep -A 1 'flagicon' | grep '<td>' | awk -F '<td>' '{print $2}' | awk -F '</td>' '{print $1}' > countryPop.txt
+
+while read country
+do   
+    pop=`head -n 1 countryPop.txt`   
+    sed -e '1d' -i countryPop.txt
+    echo "INSERTING ${country} ${pop}"
+    mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "INSERT INTO countries (countryName, totalPop) VALUES ('${country}', ${pop});" 
+done < countryNames.txt
+
+curl http://beeradvocate.com/lists/top | grep '/beer/profile/' | sed 's/"><b>/\n\n/g' | grep 'ABV' | sed -E -e 's/<\/a>.*?">//' | awk -F '</a>' '{print $1}' > beer.txt #beer names
+
+while read beer
+do
+   beerName=`echo $beer | awk -F '</b>' '{printf $1}' | sed s/"'"/""/g`
+   manf=`echo $beer | awk -F '</b>' '{printf $2}' | sed s/"'"/""/g`
+   echo "INSERTING ${beerName} ${manf}"
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "INSERT INTO beer(beerName, manf) VALUES ('${beerName}','${manf}');"
+done < beer.txt
+
+curl http://eater.com/archives/2013/10/10/are-these-the-50-best-cocktail-bars-in-the-world.php | grep ')<br />' | awk -F '.' '{print $2}' | awk -F '<br />' '{print $1}' | less > bar.txt # bar and country
+
+while read bar
+do
+   barName=`echo $bar | awk -F '(' '{printf $1}' | sed s/"'"/""/g | sed s/")"/""/g`
+   location=`echo $bar | awk -F '(' '{printf $2}' | sed s/"'"/""/g | sed s/")"/""/g`
+   echo "INSERTING ${barName} ${location}"
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "INSERT INTO bar(barName, location) VALUES ('${barName}','${location}');"
+done < bar.txt
+
+curl http://mix1065fm.cbslocal.com/2013/04/23/americas-200-most-popular-jobs-from-best-to-worst/ | grep '<br />' | awk -F '<br />' '{print $1}' | sed -e 's/^<p>//' | sed -e 's/^[0-9]* //' > jobs.txt # list of jobs

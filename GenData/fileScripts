@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# type of drunk
+while read typeOfDrunk
+do
+   drunkType=`echo $typeOfDrunk`
+   echo "INSERTING ${drunkType}"
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "INSERT INTO typeOfDrunk(drunkType) VALUES ('${drunkType}');"
+done < drunkType.txt
+
+# awards
+while read award
+do
+   nameAward=`echo $award`
+   echo "INSERTING ${nameAward}"
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "INSERT INTO award(nameAward) VALUES ('${nameAward}');"
+done < awards.txt
+
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "SELECT drinkerID FROM underageDrinker;" > underage.txt
+while read alcoholProvider
+do
+   alcoholProvider=`echo $alcoholProvider`
+   echo "UPDATING ${alcoholProvider}"
+   id=`head -n 1 underage.txt`
+   echo "$id"
+   sed -e '1d' -i underage.txt
+   mysql -u "csuser" --port 3306 --host "cs336-12.cs.rutgers.edu" bbd_plusplus -p"cs2deb75" -Bse "UPDATE underageDrinker set alcoholProvider= '${alcoholProvider}' where drinkerID='${id}';"
+done < names.txt
